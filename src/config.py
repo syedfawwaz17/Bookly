@@ -7,8 +7,6 @@ class Settings(BaseSettings):
     REDIS_URL : str = "redis://localhost:6379/0"
     REDIS_HOST: str = "localhost"
     REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_BROKER_URL: str = "redis://localhost:6379/1"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
     REDIS_PORT: int = 6379
     MAIL_USERNAME : str
     MAIL_PASSWORD: str

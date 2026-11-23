@@ -10,7 +10,9 @@ from src.config import Config
 from src.db.main import get_session
 from src.db.redis import add_jti_to_blocklist
 
-from src.celery_task import send_email as send_email_task
+from fastapi import APIRouter, status, Depends, BackgroundTasks
+
+from src.email_tasks import send_email_background
 
 from .service import UserService
 
@@ -59,22 +61,25 @@ role_checker = Rolechecker(['admin', 'User'])
 # =====================================
 
 @auth_router.post('/send_email')
-async def send_email(emails: EmailModel):
+async def send_email(
+    emails: EmailModel,
+    background_tasks: BackgroundTasks
+):
 
     recipients = emails.addresses
 
     html = "<h1>Welcome to Bookly</h1>"
 
-    send_email_task.delay(
+    background_tasks.add_task(
+        send_email_background,
         recipients,
         "Welcome",
         html
     )
 
     return {
-        "message": "Email has been queued successfully"
+        "message": "Email has been scheduled successfully"
     }
-
 
 # =====================================
 # SIGNUP
@@ -86,6 +91,7 @@ async def send_email(emails: EmailModel):
 )
 async def create_user(
     user_data: UserCreateModel,
+     background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session)
 ):
 
@@ -119,11 +125,12 @@ async def create_user(
     <a href="{link}">Verify Email</a>
     """
 
-    # Queue email using Celery
-    send_email_task.delay(
-        [email],
-        "Verify Your Email",
-        html_message
+    
+    background_tasks.add_task(
+    send_email_background,
+    [email],
+    "Verify Your Email",
+    html_message
     )
 
     return {
@@ -322,6 +329,7 @@ async def revoke_token(
 @auth_router.post("/password-reset-request")
 async def password_reset_request(
     user_data: PasswordReset,
+    background_tasks: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
 
@@ -350,10 +358,11 @@ async def password_reset_request(
     """
 
     # Queue password reset email
-    send_email_task.delay(
-        [email],
-        "Reset Your Password",
-        html
+    background_tasks.add_task(
+    send_email_background,
+    [email],
+    "Reset Your Password",
+    html
     )
 
     return JSONResponse(
