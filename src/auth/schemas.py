@@ -32,12 +32,3 @@ class LoginDataModel(BaseModel):
     email : str = Field(max_length=25)
     password_hash : str = Field(min_length=6)
     
-class EmailModel(BaseModel):
-    addresses : List[str]
-    
-class PasswordReset(BaseModel):
-    email : str
-    
-class PasswordResetConfirm(BaseModel):
-    new_password : str
-    confirm_password : str
